@@ -7,12 +7,12 @@ package common
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 
 	"github.com/hyperledger/fabric/core/comm"
 	ab "github.com/hyperledger/fabric/protos/orderer"
 	"github.com/pkg/errors"
+	tls "github.com/tjfoc/gmtls"
 )
 
 // OrdererClient represents a client for communicating with an ordering

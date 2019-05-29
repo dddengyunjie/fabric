@@ -8,7 +8,8 @@ package tlsgen
 
 import (
 	"crypto"
-	"crypto/x509"
+	//"crypto/x509"
+	"github.com/tjfoc/gmsm/sm2"
 )
 
 // CertKeyPair denotes a TLS certificate and corresponding key,
@@ -20,7 +21,7 @@ type CertKeyPair struct {
 	Key []byte
 
 	crypto.Signer
-	TLSCert *x509.Certificate
+	TLSCert *sm2.Certificate
 }
 
 // CA defines a certificate authority that can generate

@@ -8,7 +8,6 @@ package common
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/hyperledger/fabric/peer/common/api"
 	pb "github.com/hyperledger/fabric/protos/peer"
 	"github.com/pkg/errors"
+	tls "github.com/tjfoc/gmtls"
 )
 
 // PeerClient represents a client for communicating with a peer

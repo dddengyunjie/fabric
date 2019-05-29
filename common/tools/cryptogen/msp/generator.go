@@ -17,6 +17,7 @@ import (
 	"github.com/hyperledger/fabric/common/tools/cryptogen/ca"
 	"github.com/hyperledger/fabric/common/tools/cryptogen/csp"
 	fabricmsp "github.com/hyperledger/fabric/msp"
+	"github.com/tjfoc/gmsm/sm2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -66,7 +67,8 @@ func GenerateLocalMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	}
 
 	// get public key
-	ecPubKey, err := csp.GetECPublicKey(priv)
+	//ecPubKey, err := csp.GetECPublicKey(priv)
+	sm2PubKey, err := csp.GetSM2PublicKey(priv)
 	if err != nil {
 		return err
 	}
@@ -76,7 +78,7 @@ func GenerateLocalMSP(baseDir, name string, sans []string, signCA *ca.CA,
 		ous = []string{nodeOUMap[nodeType]}
 	}
 	cert, err := signCA.SignCertificate(filepath.Join(mspDir, "signcerts"),
-		name, ous, nil, ecPubKey, x509.KeyUsageDigitalSignature, []x509.ExtKeyUsage{})
+		name, ous, nil, sm2PubKey, x509.KeyUsageDigitalSignature, []x509.ExtKeyUsage{})
 	if err != nil {
 		return err
 	}
@@ -84,12 +86,12 @@ func GenerateLocalMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	// write artifacts to MSP folders
 
 	// the signing CA certificate goes into cacerts
-	err = x509Export(filepath.Join(mspDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
+	err = x509Export(filepath.Join(mspDir, "cacerts", x509Filename(signCA.Name)), signCA.SignSm2Cert)
 	if err != nil {
 		return err
 	}
 	// the TLS CA certificate goes into tlscacerts
-	err = x509Export(filepath.Join(mspDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
+	err = x509Export(filepath.Join(mspDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignSm2Cert)
 	if err != nil {
 		return err
 	}
@@ -121,7 +123,8 @@ func GenerateLocalMSP(baseDir, name string, sans []string, signCA *ca.CA,
 		return err
 	}
 	// get public key
-	tlsPubKey, err := csp.GetECPublicKey(tlsPrivKey)
+	//tlsPubKey, err := csp.GetECPublicKey(tlsPrivKey)
+	tlsPubKey, err := csp.GetSM2PublicKey(tlsPrivKey)
 	if err != nil {
 		return err
 	}
@@ -132,7 +135,7 @@ func GenerateLocalMSP(baseDir, name string, sans []string, signCA *ca.CA,
 	if err != nil {
 		return err
 	}
-	err = x509Export(filepath.Join(tlsDir, "ca.crt"), tlsCA.SignCert)
+	err = x509Export(filepath.Join(tlsDir, "ca.crt"), tlsCA.SignSm2Cert)
 	if err != nil {
 		return err
 	}
@@ -162,12 +165,12 @@ func GenerateVerifyingMSP(baseDir string, signCA *ca.CA, tlsCA *ca.CA, nodeOUs b
 	err := createFolderStructure(baseDir, false)
 	if err == nil {
 		// the signing CA certificate goes into cacerts
-		err = x509Export(filepath.Join(baseDir, "cacerts", x509Filename(signCA.Name)), signCA.SignCert)
+		err = x509Export(filepath.Join(baseDir, "cacerts", x509Filename(signCA.Name)), signCA.SignSm2Cert)
 		if err != nil {
 			return err
 		}
 		// the TLS CA certificate goes into tlscacerts
-		err = x509Export(filepath.Join(baseDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignCert)
+		err = x509Export(filepath.Join(baseDir, "tlscacerts", x509Filename(tlsCA.Name)), tlsCA.SignSm2Cert)
 		if err != nil {
 			return err
 		}
@@ -185,13 +188,15 @@ func GenerateVerifyingMSP(baseDir string, signCA *ca.CA, tlsCA *ca.CA, nodeOUs b
 	// of unit tests
 	factory.InitFactories(nil)
 	bcsp := factory.GetDefault()
-	priv, err := bcsp.KeyGen(&bccsp.ECDSAP256KeyGenOpts{Temporary: true})
-	ecPubKey, err := csp.GetECPublicKey(priv)
+	//priv, err := bcsp.KeyGen(&bccsp.ECDSAP256KeyGenOpts{Temporary: true})
+	priv, err := bcsp.KeyGen(&bccsp.GMSM2KeyGenOpts{Temporary: true})
+	//ecPubKey, err := csp.GetECPublicKey(priv)
+	sm2PubKey, err := csp.GetSM2PublicKey(priv)
 	if err != nil {
 		return err
 	}
 	_, err = signCA.SignCertificate(filepath.Join(baseDir, "admincerts"), signCA.Name,
-		nil, nil, ecPubKey, x509.KeyUsageDigitalSignature, []x509.ExtKeyUsage{})
+		nil, nil, sm2PubKey, x509.KeyUsageDigitalSignature, []x509.ExtKeyUsage{})
 	if err != nil {
 		return err
 	}
@@ -227,7 +232,7 @@ func x509Filename(name string) string {
 	return name + "-cert.pem"
 }
 
-func x509Export(path string, cert *x509.Certificate) error {
+func x509Export(path string, cert *sm2.Certificate) error {
 	return pemExport(path, "CERTIFICATE", cert.Raw)
 }
 
